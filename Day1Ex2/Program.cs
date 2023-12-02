@@ -14,24 +14,27 @@ var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
 //             zoneight234
 //             7pqrstsixteen
 //             """.Trim(), @"\s+");
-var stringToNumDict = new Dictionary<string, int>()
+var stringToNumDict = new Dictionary<string, string>()
 {
-    { "zero", 0},
-    { "one", 1 },
-    { "two", 2 },
-    { "three", 3 },
-    { "four", 4},
-    { "five", 5 },
-    { "six", 6 },
-    { "seven", 7 },
-    { "eight", 8 },
-    { "nine", 9 },
+    { "zero", "0"},
+    { "one", "1" },
+    { "two", "2" },
+    { "three", "3" },
+    { "four", "4"},
+    { "five", "5" },
+    { "six", "6" },
+    { "seven", "7" },
+    { "eight", "8" },
+    { "nine", "9" },
 };
 
 var sum = 0;
 var regex = new Regex(@"\d|one|two|three|four|five|six|seven|eight|nine");
+
+// Get each line
 foreach (var line in lines)
 {
+    // match each single digit or number in string form and add to nums list
     var nums = new List<string>() { };
     var matchObj = regex.Match(line);
     while (matchObj.Success)
@@ -39,25 +42,13 @@ foreach (var line in lines)
         nums.Add(matchObj.Value);
         matchObj = regex.Match(line, matchObj.Index + 1);
     }
-    var digits = 
-        nums
-            .Where(n => n.Length == 1 && char.IsDigit(n.First()) || stringToNumDict.Keys.Any(n.Contains))
-            .Select(n =>
-            {
-                int i;
-                var match = stringToNumDict.Keys.FirstOrDefault(k => n.Contains(k));
-                if (string.IsNullOrEmpty(match))
-                {
-                    i = int.Parse(n);
-                } else
-                {
-                    stringToNumDict.TryGetValue(match, out i);
-                } 
-                return i;
-            })
-            .ToList();
-    var number = digits.First() * 10 + digits.Last();
-    sum += number;
+    
+    // convert strings to numbers if they are not single digit chars
+    var sanitisedNums = nums.Select(n => stringToNumDict.GetValueOrDefault(n) ?? n).ToList();
+    
+    // either parse the string as a number or match it to the dictionary
+    var num = $"{sanitisedNums.First()}{sanitisedNums.Last()}";
+    sum += int.Parse(num);
 }
 
 Console.WriteLine(sum);
