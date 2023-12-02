@@ -7,19 +7,17 @@ var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
 
 // this could be a compile time regex, but I chose not to for readability
 var gameNumRegex = new Regex(@"Game\s+(\d+):");
-var powers = 0L;
-
-foreach (var line in lines)
-{
-    var cubeSetsSubstring = gameNumRegex.Replace(line, "");
-    var cubeSets = cubeSetsSubstring.Trim().Split(";").SelectMany(s => s.Split(", "));
-    var cubes = cubeSets.Select(Cubes.FromString).ToList();
-    var maxRed = MaxColour(cubes, Colour.Red);
-    var maxBlue = MaxColour(cubes, Colour.Blue);
-    var maxGreen = MaxColour(cubes, Colour.Green);
-    var power = maxRed * maxBlue * maxGreen;
-    powers += power;
-}
+var powers = (from line in lines
+    select gameNumRegex.Replace(line, "")
+    into cubeSetsSubstring
+    select cubeSetsSubstring.Trim().Split(";").SelectMany(s => s.Split(", "))
+    into cubeSets
+    select cubeSets.Select(Cubes.FromString).ToList()
+    into cubes
+    let maxRed = MaxColour(cubes, Colour.Red)
+    let maxBlue = MaxColour(cubes, Colour.Blue)
+    let maxGreen = MaxColour(cubes, Colour.Green)
+    select maxRed * maxBlue * maxGreen).Aggregate(0L, (current, power) => current + power);
 
 Console.WriteLine(powers);
 return;
@@ -27,7 +25,7 @@ return;
 int MaxColour(List<Cubes> cubesList, Colour colour)
 {
     var filtered = cubesList.Where(c => c.Colour == colour).ToList();
-    return filtered.Any() ? filtered.Max(c => c.NumOfCubes) : 1;
+    return filtered.Count != 0 ? filtered.Max(c => c.NumOfCubes) : 1;
 }
 
 internal enum Colour
@@ -44,7 +42,6 @@ internal record Cubes(int NumOfCubes, Colour Colour)
     public static Cubes FromString(string s)
     {
         var match = regex.Match(s);
-        var numOfCubes = int.Parse(match.Groups[1].Value);
         var colour = match.Groups[2].Value switch
         {
             "red" => Colour.Red,
