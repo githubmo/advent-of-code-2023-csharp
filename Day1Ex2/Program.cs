@@ -46,7 +46,7 @@ foreach (var line in lines)
     // convert strings to numbers if they are not single digit chars
     var sanitisedNums = nums.Select(n => stringToNumDict.GetValueOrDefault(n) ?? n).ToList();
     
-    // either parse the string as a number or match it to the dictionary
+    // concatenate first and last, convert to int
     var num = $"{sanitisedNums.First()}{sanitisedNums.Last()}";
     sum += int.Parse(num);
 }
