@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
 
+// this could be a compile time regex, but I chose not to for readability
 var gameNumRegex = new Regex(@"Game\s+(\d+):");
 var powers = 0L;
 
@@ -17,7 +18,7 @@ foreach (var line in lines)
     var maxBlue = MaxColour(cubes, Colour.Blue);
     var maxGreen = MaxColour(cubes, Colour.Green);
     var power = maxRed * maxBlue * maxGreen;
-    powers += maxRed * maxBlue * maxGreen;
+    powers += power;
 }
 
 Console.WriteLine(powers);
