@@ -9,7 +9,6 @@ var (i, j) = (0, 0);
 var rowLength = grid[0].Length;
 var gridLength = grid.Length;
 var sum = 0;
-var set = new HashSet<char>();
 while (i < gridLength)
 {
     var currentChar = grid[i][j];
@@ -57,7 +56,6 @@ bool HasAdjacentSpecialChar(int i, int j)
             if (!IsValidColumnIndex(ii) || !IsValidRowIndex(jj)) continue;
             var currentChar = grid![ii][jj];
             if (currentChar == '.' || char.IsDigit(currentChar)) continue;
-            set.Add(grid[ii][jj]);
             return true;
         }
     }
