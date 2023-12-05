@@ -3,7 +3,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-const string inputResource = "Resources/example.txt";
+const string inputResource = "Resources/input.txt";
 var lines = File.ReadLines(inputResource, Encoding.UTF8);
 
 // used to grab the mapping
@@ -44,7 +44,7 @@ using (enumerator)
     {
         var from = group.First();
         var last = group.Last();
-        for (var l = from; l < from + last; l++) sourceSteps.Add(new Range(from, from + last - 1));
+        sourceSteps.Add(new Range(from, from + last - 1));
     }
 
     var destinationSteps = sourceSteps;
@@ -67,32 +67,46 @@ using (enumerator)
                 //     return range - currentMapping.SourceRange.From + currentMapping.DestFrom;
 
                 var orderedMappings = currentMappings
-                    .Where(m => !(range.From < m.SourceRange.From && range.To < m.SourceRange.From))
-                    .Where(m => !(range.From > m.SourceRange.To))
+                    .Where(m => m.ContainsRange(range))
                     .OrderBy(m => m.SourceRange.From)
                     .ToList();
 
-                if (orderedMappings.Count == 0) return new List<Range> { range };
+                if (orderedMappings.Count == 0)
+                    return new List<Range> { range };
                 var ranges = new List<Range>();
                 var minSource = orderedMappings.Select(m => m.SourceRange.From).Min();
-                if (range.From < minSource) ranges.Add(new Range(range.From, minSource - 1));
-                var
+                if (range.From < minSource)
+                    ranges.Add(range with { To = minSource - 1 });
+                else minSource = range.From;
+                var maxSource = orderedMappings.Select(m => m.SourceRange.To).Max();
+                if (range.To > maxSource)
+                    ranges.Add(range with { From = maxSource + 1 });
+                else maxSource = range.To;
 
-                orderedMappings.SelectMany(m =>
+                foreach (var m in orderedMappings)
                 {
-                    var sourceRange = m.SourceRange;
-                    if (range.To < sourceRange.From || range.From > sourceRange.To) return new List<Range> { range };
-                    if (sourceRange.From > range.From) ranges.Add(new Range(range.From, sourceRange.From - 1));
-                })
+                    if (minSource < m.SourceRange.From)
+                    {
+                        ranges.Add(new Range(minSource, m.SourceRange.From - 1));
+                        minSource = m.SourceRange.From;
+                    }
+
+                    var localMax = Math.Min(maxSource, m.SourceRange.To);
+                    ranges.Add(new Range(minSource + m.Diff, localMax + m.Diff)); // not sure
+
+                    if (localMax < range.To)
+                        minSource = localMax;
+                    else break;
+                }
 
 
-                return range;
+                return ranges.Distinct();
             }).ToList();
             Console.WriteLine("blah");
         }
     }
 
-    Console.WriteLine(destinationSteps.Min());
+    Console.WriteLine(destinationSteps.Select(r => r.From).Min());
 }
 
 // Console.WriteLine(sum);
@@ -108,13 +122,17 @@ List<long> NumberMappings(string line)
 internal sealed record SourceRange(long From, long RangeLength)
 {
     public long To => From + RangeLength - 1;
-
-    public bool IsInRange(long input)
-    {
-        return input >= From && input <= To;
-    }
 }
 
-internal sealed record MappingRange(long DestFrom, SourceRange SourceRange);
+internal sealed record MappingRange(long DestFrom, SourceRange SourceRange)
+{
+    public long Diff = DestFrom - SourceRange.From;
+
+    public bool ContainsRange(Range r)
+    {
+        var result = !(r.To < SourceRange.From || r.From > SourceRange.To);
+        return result;
+    }
+}
 
 internal sealed record Range(long From, long To);
