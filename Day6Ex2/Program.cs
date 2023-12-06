@@ -1,6 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,7 +9,6 @@ var numRegex = new Regex(@"[^\d]+");
 Console.WriteLine(numRegex);
 var time = long.Parse(string.Join("", numRegex.Split(lines[0]).Where(d => !string.IsNullOrWhiteSpace(d))));
 var distance = long.Parse(string.Join("", numRegex.Split(lines[1]).Where(d => !string.IsNullOrWhiteSpace(d))));
-var cb = new ConcurrentBag<long>();
 
 var (min, max) = (0L, 0L);
 for (var l = 1L; l < time; l++)
