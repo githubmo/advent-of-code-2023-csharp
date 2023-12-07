@@ -22,7 +22,8 @@ var sum = hands.Order().Select(
             var result = hand.Winning * (index + 1);
             Console.WriteLine(
                 // $"{string.Join("", hand.Cards)} ::: {index + 1}  :::   {hand.Winning}     >>>    {result}");
-                $"{string.Join("", hand.Cards)}");
+                // $"{string.Join("", hand.Cards)} ==> {string.Join("", hand.NewHand)}");
+                string.Join("", hand.Cards));
             return result;
         })
     .Sum();
@@ -54,19 +55,30 @@ internal record Hand(char[] Cards, long Winning) : IComparable<Hand>
     public static readonly Dictionary<char, int> Weights = new()
     {
         { 'T', 10 },
-        { 'J', 11 },
+        { 'J', 1 },
         { 'Q', 12 },
         { 'K', 13 },
         { 'A', 14 }
     };
 
+    public char[] NewHand
+    {
+        get
+        {
+            var currentGrouped =
+                Cards.GroupBy(c => c).Select(chars => new { chars.Key, Count = chars.Count() }).ToList();
+            var mostOccurence = currentGrouped.Where(c => c.Key != 'J').OrderByDescending(x => x.Count)
+                .Select(x => x.Key).FirstOrDefault();
+            if (mostOccurence == default(char)) mostOccurence = 'J';
+            return Cards.Select(c => c == 'J' ? mostOccurence : c).ToArray();
+        }
+    }
 
     public HandType Type
     {
         get
         {
-            var grouped =
-                Cards.GroupBy(c => c).Select(chars => new { chars.Key, Count = chars.Count() }).ToList();
+            var grouped = NewHand.GroupBy(c => c).Select(chars => new { chars.Key, Count = chars.Count() }).ToList();
             var groupCount = grouped.Count;
             if (groupCount == 1)
                 return HandType.Five;
@@ -100,6 +112,7 @@ internal record Hand(char[] Cards, long Winning) : IComparable<Hand>
 
         return index == Cards.Length ? 0 : CardToInt(Cards[index]).CompareTo(CardToInt(other.Cards[index]));
     }
+
 
     public static int CardToInt(char c)
     {
