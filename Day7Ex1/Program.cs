@@ -3,7 +3,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-var lines = File.ReadLines("Resources/example2.txt", Encoding.UTF8);
+var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
 
 var whiteSpaceRegex = new Regex(@"\s+");
 var hands = lines
@@ -12,14 +12,19 @@ var hands = lines
         new Hand(handAndWinning[0].ToCharArray(), long.Parse(handAndWinning[1])))
     .ToList();
 
-hands.Sort();
 
 // 248622819
-foreach (var hand in hands) Console.WriteLine($"{string.Join("", hand.Cards)} ::: {hand.Winning}");
+// 248559379
 
-var sum = hands.Select(
+var sum = hands.Order().Select(
         (hand, index) =>
-            hand.Winning * (index + 1))
+        {
+            var result = hand.Winning * (index + 1);
+            Console.WriteLine(
+                // $"{string.Join("", hand.Cards)} ::: {index + 1}  :::   {hand.Winning}     >>>    {result}");
+                $"{string.Join("", hand.Cards)}");
+            return result;
+        })
     .Sum();
 Console.WriteLine(sum);
 
@@ -35,6 +40,13 @@ Console.WriteLine(sum);
 // Console.WriteLine(new Hand("23456".ToCharArray(), 1).Type.ToString()); // high
 // Console.WriteLine(new Hand("789TJ".ToCharArray(), 1).Type.ToString()); // high
 // Console.WriteLine(new Hand("2468T".ToCharArray(), 1).Type.ToString()); // four
+// Console.WriteLine(new Hand("AAAAA".ToCharArray(), 1).Type.ToString()); // five
+// Console.WriteLine(new Hand("AAAAJ".ToCharArray(), 1).Type.ToString()); // four
+// Console.WriteLine(new Hand("AAAJJ".ToCharArray(), 1).Type.ToString()); // full
+// Console.WriteLine(new Hand("AAAJT".ToCharArray(), 1).Type.ToString()); // three
+// Console.WriteLine(new Hand("AAKJJ".ToCharArray(), 1).Type.ToString()); // two
+// Console.WriteLine(new Hand("23456".ToCharArray(), 1).Type.ToString()); // high
+// Console.WriteLine(new Hand("TAQJK".ToCharArray(), 1).Type.ToString()); // bad
 
 
 internal record Hand(char[] Cards, long Winning) : IComparable<Hand>
@@ -68,18 +80,13 @@ internal record Hand(char[] Cards, long Winning) : IComparable<Hand>
                 return HandType.TwoPair;
             if (grouped.Exists(pair => pair.Count == 2))
                 return HandType.OnePair;
-            var orderedCards = Cards.Select(CardToInt).ToList();
-            if (orderedCards.Last() - orderedCards.First() == 4) return HandType.HighCard;
+            // var orderedCards = Cards.Select(CardToInt).Order().ToList();
+            // if (orderedCards.Last() - orderedCards.First() == 4) return HandType.HighCard;
+            if (Cards.Distinct().Count() == 5) return HandType.HighCard;
 
             return HandType.Bad;
         }
     }
-
-    public int FirstCardWeight => CardToInt(Cards[0]);
-    public int SecondCardWeight => CardToInt(Cards[1]);
-    public int ThirdCardWeight => CardToInt(Cards[2]);
-    public int FourthCardWeight => CardToInt(Cards[3]);
-    public int FifthCardWeight => CardToInt(Cards[4]);
 
     public int CompareTo(Hand? other)
     {
@@ -88,19 +95,10 @@ internal record Hand(char[] Cards, long Winning) : IComparable<Hand>
         var handTypeCompared = Type.CompareTo(other.Type);
         if (handTypeCompared != 0) return handTypeCompared;
 
-        var firstCompared = FirstCardWeight.CompareTo(other.FirstCardWeight);
-        if (firstCompared != 0) return firstCompared;
+        var index = 0;
+        while (index < Cards.Length && Cards[index] == other.Cards[index]) index++;
 
-        var secondCompared = SecondCardWeight.CompareTo(other.SecondCardWeight);
-        if (secondCompared != 0) return secondCompared;
-
-        var thirdCompared = ThirdCardWeight.CompareTo(other.ThirdCardWeight);
-        if (thirdCompared != 0) return thirdCompared;
-
-        var fourth = FourthCardWeight.CompareTo(other.FourthCardWeight);
-        if (fourth != 0) return fourth;
-
-        return FifthCardWeight.CompareTo(other.FifthCardWeight);
+        return CardToInt(Cards[index]).CompareTo(CardToInt(other.Cards[index]));
     }
 
     public static int CardToInt(char c)
