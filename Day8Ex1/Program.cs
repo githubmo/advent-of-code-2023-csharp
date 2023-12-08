@@ -22,8 +22,9 @@ while (enumerator.MoveNext())
 
 var steps = 0L;
 
+//13207
 var current = "AAA";
-while (current != "ZZZ" && steps < 10)
+while (current != "ZZZ")
 {
     // LRLRLLRLRLRRLRLRLRRLRLRLLRRLRRLRLRLRLLR
     var direction = directions[steps % directions.Length];
