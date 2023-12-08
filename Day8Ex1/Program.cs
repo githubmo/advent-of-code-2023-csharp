@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
-var enumerator = lines.GetEnumerator();
+using var enumerator = lines.GetEnumerator();
 enumerator.MoveNext();
 
 var labelRegex = new Regex(@"(\w{3}) = \((\w{3}), (\w{3})");
