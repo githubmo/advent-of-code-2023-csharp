@@ -17,7 +17,10 @@ Console.WriteLine(sum);
 
 long NextInSeq(List<long> list)
 {
-    var diffs = list.Zip(list.Skip(1)).Select(pair => pair.Second - pair.First).ToList();
+    var diffs =
+        list.Zip(
+            list.Skip(1)).Select(pair => pair.Second - pair.First
+        ).ToList();
     // Console.WriteLine(string.Join(" ::: ", diffs));
     return diffs.All(l => l == 0) ? list.Last() : list.Last() + NextInSeq(diffs);
 }
