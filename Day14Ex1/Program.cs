@@ -5,11 +5,7 @@ using System.Text;
 var map = File.ReadLines("Resources/input.txt", Encoding.UTF8).Select(s => s.ToArray()).ToArray();
 var mapLength = map.Length;
 
-// shift up
 CycleNorth();
-
-// print shift up result
-
 foreach (var line in map) Console.WriteLine(string.Join("", line));
 
 var sum = 0;
@@ -25,7 +21,6 @@ Console.WriteLine(sum);
 
 void CycleNorth()
 {
-    // shift up
     for (var i = 1; i < map.Length; i++)
     for (var j = 0; j < map[0].Length; j++)
     {
