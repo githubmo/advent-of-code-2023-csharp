@@ -1,8 +1,11 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 
+var stopwatch = new Stopwatch();
+stopwatch.Start();
 var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
 using var enumerator = lines.GetEnumerator();
 enumerator.MoveNext();
@@ -41,6 +44,8 @@ foreach (var start in starts)
 
 
 Console.WriteLine(finals.Aggregate((x, y) => Lcm(x, y)));
+stopwatch.Stop();
+Console.WriteLine(stopwatch.ElapsedMilliseconds);
 return;
 
 long Lcm(long a, long b)
