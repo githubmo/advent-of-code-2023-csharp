@@ -85,12 +85,17 @@ while (problemQueue.Count > 0)
     var problem = problemQueue.Dequeue();
     var (l, b) = (problem.label, problem.Item2);
     var instruction = instructions[l];
-    var rules = instruction.Rules.Where(r => r.c != 'R');
+    var rules = instruction.Rules;
     var prevRules = new List<(char c, Rule r)>();
     foreach (var r in rules)
     {
         var rule = r.Item2;
-        if (rule.Destination == "R") continue;
+        if (rule.Destination == "R")
+        {
+            prevRules.Add(r);
+            continue;
+        }
+
         var newBoundaries = rule.Comparator switch
         {
             // less than 101 means upper boundary of 100
