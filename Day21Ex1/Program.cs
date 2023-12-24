@@ -51,5 +51,3 @@ string MapToString()
 {
     return string.Join("\n", visited.Select(l => string.Join("", l)));
 }
-
-;
