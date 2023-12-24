@@ -1,107 +1,112 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Text;
-using System.Text.RegularExpressions;
 
-var lines = File.ReadLines("Resources/example.txt", Encoding.UTF8);
+var lines = File.ReadAllText("Resources/input.txt", Encoding.UTF8);
 
-var brickRegex = new Regex(@"(\d+,\d+,\d+)~(\d+,\d+,\d+)");
-var bricks = lines
-    .Select(line => brickRegex.Match(line).Groups)
-    .Select(gs => new EdgeToEdge(Point3D.FromString(gs[1].Value), Point3D.FromString(gs[2].Value)))
-    .ToList();
+Console.WriteLine(Solve(lines).Sum());
 
-var orderedBricks = bricks.OrderBy(b => b.LowestZ()).ToList();
-var shiftedBricks = new List<EdgeToEdge>();
-foreach (var edgeToEdge in orderedBricks)
-    // it's already at the bottom 
-    if (edgeToEdge.LowestZ() == 1)
-    {
-        shiftedBricks.Add(edgeToEdge);
-    }
-    else
-    {
-        var belowXandYs = edgeToEdge.AllXandYs();
-        // find all the cubes directly below it, find the highest point on z, and then shift to one above it
-        var directlyBelow = shiftedBricks
-            .SelectMany(p => p.AllCubes())
-            .Where(p => belowXandYs.Contains(new Point2D(p.X, p.Y)))
-            .ToArray();
-
-        var shiftBy = directlyBelow.Length == 0
-            ? edgeToEdge.LowestZ() - 1
-            : edgeToEdge.LowestZ() - directlyBelow.Select(p => p.Z).Max() - 1;
-        shiftedBricks.Add(edgeToEdge.ShiftDown(shiftBy));
-    }
-
-
-var sum = shiftedBricks.Select(b =>
+IEnumerable<int> Solve(string input)
 {
-    var xys = b.AllXandYs();
-    var above =
-        shiftedBricks
-            .Where(
-                bb => bb.AllCubes().Any(p => xys.Contains(new Point2D(p.X, p.Y)) && p.Z > b.HighestZ()));
+    var bricks = Fall(ParseBricks(input));
+    var supports = GetSupports(bricks);
 
-    return above.Select(aboveB =>
+    foreach (var desintegratedBrick in bricks)
     {
-        // we are looking for cubes that are directly below us 
-        var lowCubes = aboveB.AllXandYs().Select(p => new Point3D(p.X, p.Y, aboveB.LowestZ() - 1)).ToList();
-        // find the bricks that support us
-        var supporters = shiftedBricks.Where(bb => bb.AllCubes().Intersect(lowCubes).Any()).ToList();
-        return supporters.Count() == 1 ? 1 : 0;
-    }).Sum();
-}).Sum();
+        var q = new Queue<Brick>();
+        q.Enqueue(desintegratedBrick);
 
-Console.WriteLine(sum);
+        var falling = new HashSet<Brick>();
+        while (q.TryDequeue(out var brick))
+        {
+            falling.Add(brick);
 
-internal record Point2D(int X, int Y);
+            var bricksStartFalling =
+                from brickT in supports.bricksAbove[brick]
+                where supports.bricksBelow[brickT].IsSubsetOf(falling)
+                select brickT;
 
-internal record Point3D(int X, int Y, int Z)
-{
-    public static Point3D FromString(string s)
-    {
-        var r = s.Split(",").Select(s => int.Parse(s.Trim())).ToArray();
-        return new Point3D(r[0], r[1], r[2]);
+            foreach (var brickT in bricksStartFalling) q.Enqueue(brickT);
+        }
+
+        yield return falling.Count - 1; // -1: desintegratedBrick doesn't count 
     }
 }
 
-internal record EdgeToEdge(Point3D P1, Point3D P2)
+// applies 'gravity' to the bricks.
+Brick[] Fall(Brick[] bricks)
 {
-    private readonly HashSet<Point3D> _set = [];
+    // sort them in Z first so that we can work in bottom to top order
+    bricks = bricks.OrderBy(brick => brick.Bottom).ToArray();
 
-    public string Label => $"{P1}{P2}";
-
-    public HashSet<Point3D> AllCubes()
+    for (var i = 0; i < bricks.Length; i++)
     {
-        if (_set.Count != 0) return _set;
-
-        _set.Add(P1);
-        _set.Add(P2);
-        for (var x = Math.Min(P1.X, P2.X); x <= Math.Max(P1.X, P2.X); x++)
-        for (var y = Math.Min(P1.Y, P2.Y); y <= Math.Max(P1.Y, P2.Y); y++)
-        for (var z = Math.Min(P1.Z, P2.Z); z <= Math.Max(P1.Z, P2.Z); z++)
-            _set.Add(new Point3D(x, y, z));
-        return _set;
+        var newBottom = 1;
+        for (var j = 0; j < i; j++)
+            if (IntersectsXY(bricks[i], bricks[j]))
+                newBottom = Math.Max(newBottom, bricks[j].Top + 1);
+        var fall = bricks[i].Bottom - newBottom;
+        bricks[i] = bricks[i] with
+        {
+            z = new Range(bricks[i].Bottom - fall, bricks[i].Top - fall)
+        };
     }
 
-    public HashSet<Point2D> AllXandYs()
-    {
-        return _set.Select(p => new Point2D(p.X, p.Y)).ToHashSet();
-    }
-
-    public int LowestZ()
-    {
-        return AllCubes().ToList().Select(s => s.Z).Min();
-    }
-
-    public int HighestZ()
-    {
-        return AllCubes().Select(s => s.Z).Max();
-    }
-
-    public EdgeToEdge ShiftDown(int s)
-    {
-        return new EdgeToEdge(P1 with { Z = P1.Z - s }, P2 with { Z = P2.Z - s });
-    }
+    return bricks;
 }
+
+// calculate upper and lower neighbours for each brick
+Supports GetSupports(Brick[] bricks)
+{
+    var bricksAbove = bricks.ToDictionary(b => b, _ => new HashSet<Brick>());
+    var bricksBelow = bricks.ToDictionary(b => b, _ => new HashSet<Brick>());
+    for (var i = 0; i < bricks.Length; i++)
+    for (var j = i + 1; j < bricks.Length; j++)
+    {
+        var zNeighbours = bricks[j].Bottom == 1 + bricks[i].Top;
+        if (zNeighbours && IntersectsXY(bricks[i], bricks[j]))
+        {
+            bricksBelow[bricks[j]].Add(bricks[i]);
+            bricksAbove[bricks[i]].Add(bricks[j]);
+        }
+    }
+
+    return new Supports(bricksAbove, bricksBelow);
+}
+
+bool IntersectsXY(Brick brickA, Brick brickB)
+{
+    return Intersects(brickA.x, brickB.x) && Intersects(brickA.y, brickB.y);
+}
+
+// see https://stackoverflow.com/a/3269471
+bool Intersects(Range r1, Range r2)
+{
+    return r1.begin <= r2.end && r2.begin <= r1.end;
+}
+
+Brick[] ParseBricks(string input)
+{
+    return (
+        from line in input.Split('\n')
+        let numbers = line.Split(',', '~').Select(int.Parse).ToArray()
+        select new Brick(
+            new Range(numbers[0], numbers[3]),
+            new Range(numbers[1], numbers[4]),
+            new Range(numbers[2], numbers[5])
+        )
+    ).ToArray();
+}
+
+internal record Range(int begin, int end);
+
+internal record Brick(Range x, Range y, Range z)
+{
+    public int Top => z.end;
+    public int Bottom => z.begin;
+}
+
+internal record Supports(
+    Dictionary<Brick, HashSet<Brick>> bricksAbove,
+    Dictionary<Brick, HashSet<Brick>> bricksBelow
+);
