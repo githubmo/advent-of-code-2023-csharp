@@ -44,19 +44,17 @@ var dd = 131;
 
 
 // three points on the quadratic equation graph
-var one = stepsAtEachCycle[bb];
-var two = stepsAtEachCycle[bb + dd];
-var three = stepsAtEachCycle[bb + dd * 2];
+var one = stepsAtEachCycle[bb - 1];
+var two = stepsAtEachCycle[bb + dd - 1];
+var three = stepsAtEachCycle[bb + dd * 2 - 1];
 
 // getting a,b,c in a**2x + bx + c = 0
 var a = (three - 2 * two + one) / 2;
 var b = two - one - a;
-// var b = (4 * two - three - 3 * one) / 2;
-// var a = two - one - b;
 var c = one;
 var n = (steps - bb) / dd;
 
-var result = a * n * n + b * n + c;
+var result = a * Math.Pow(n, 2) + b * n + c;
 
 Console.WriteLine(result);
 return;
