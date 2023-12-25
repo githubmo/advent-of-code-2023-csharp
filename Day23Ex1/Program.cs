@@ -2,7 +2,7 @@
 
 using System.Text;
 
-var lines = File.ReadLines("Resources/example.txt", Encoding.UTF8);
+var lines = File.ReadLines("Resources/input.txt", Encoding.UTF8);
 var map = lines.Select(l => l.ToCharArray()).ToArray();
 var (rows, columns) = (map.Length, map[0].Length);
 
@@ -48,11 +48,26 @@ for (var j = 0; j < columns; j++)
 }
 
 // Using a DFS to find all the paths
+var paths = new List<List<Point>>();
+paths.Add(new List<Point> { new(0, 1) });
+var lastPoint = new Point(rows - 1, columns - 2); // last point always on last row and second to last column
+while (!paths.TrueForAll(l => l.Contains(lastPoint)))
+    paths = paths.SelectMany(path =>
+    {
+        // if path contains last point, just return it without a new path
+        if (path.Contains(lastPoint)) return [path];
+
+        // create a new path for every point that is connecting to the last point in the path
+        tiles.TryGetValue(path.Last(), out var tile);
+        var validConnected = tile!.Connected.Where(c => !path.Contains(c)).ToList();
+        if (validConnected.Count == 0) return []; // if it cannot connect, it's not a valid path
+        return validConnected.Select(p => path.Concat([p])).ToList();
+    }).Select(p => p.ToList()).ToList();
+
+// Console.WriteLine(string.Join("\n", tiles.Select(t => $"{t.Key} >> {string.Join(" :: ", t.Value.Connected)}")));
 
 // Finding the one that 
-
-Console.WriteLine(string.Join("\n", tiles.Select(t => $"{t.Key} >> {string.Join(" :: ", t.Value.Connected)}")));
-Console.WriteLine(sum);
+Console.WriteLine(paths.Max(p => p.Count - 1)); // -1 because the first tile you don't step to it
 
 // a tile is a valid stepping tile if it is within the map and is not a rock '#'
 bool IsValid(Point p)
