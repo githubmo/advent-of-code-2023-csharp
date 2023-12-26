@@ -30,7 +30,7 @@ while (hails.Count > 1)
     foreach (var hail in hails)
     {
         // check if parallel
-        if (current.Velocity.isSame(hail.Velocity))
+        if (current.Velocity.IsSame(hail.Velocity))
             // Console.WriteLine($"Both are the parallel\n{current}\n{hail}\n");
             continue;
 
@@ -48,13 +48,13 @@ while (hails.Count > 1)
         // Console.WriteLine(
         //     $"Collision of the following\n{current}\n{hail}\nWas at {px},{py} using multiplier {s} and {t}\n");
 
+        // s and t are the time multipliers for hail and current respectively, and therefore
         // if s and t are positive, it means they intersect in the future
         if (s > 0.0 && t > 0.0 && px >= lowerLimit && px <= upperLimit && py >= lowerLimit && py <= upperLimit)
             sum += 1;
     }
 }
 
-Console.WriteLine(string.Join("\n", hails));
 Console.WriteLine(sum);
 
 internal record Hail(Point3D Point, Velocity Velocity)
@@ -87,7 +87,7 @@ internal record Velocity(double X, double Y, double Z)
         return new Velocity(array[0], array[1], array[2]);
     }
 
-    public bool isSame(Velocity other)
+    public bool IsSame(Velocity other)
     {
         var divs = new[] { X / other.X, Y / other.Y, Z / other.Z };
         return divs.Distinct().Count() == 1; // they are all the same
